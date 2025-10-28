@@ -3,12 +3,10 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { MessageSquare, Plus, X, Send } from "lucide-react";
-import { Badge } from "./ui/badge";
+import { Textarea } from "./ui/textarea";
 
-type MessageType = "app-general" | "reservas-fuera-horario" | "sin-competencia";
 type Language = "es" | "ca";
 
 interface Lead {
@@ -17,162 +15,50 @@ interface Lead {
   phoneNumber: string;
 }
 
-const MESSAGES = {
-  es: {
-    "app-general": (name: string) => `Hola ${name}
+const DEFAULT_MESSAGE = {
+  es: (name: string) => `Hola ${name} 👋
+Soy Juanjo de Exora.
+Vi que te interesó nuestro anuncio —quería contarte que ahora puedes tener tu propia app de reservas personalizada desde 34,90 €/mes (precio promocional por haber rellenado el formulario).
 
-Soy Juanjo de Exora. Vi que te interesó nuestro video sobre la app de reservas.
+Sin competencia, sin comisiones y con tus clientes bajo tu control.
 
-Te entiendo perfectamente: perder reservas fuera de horario o compartir app con tu competencia es frustrante.
+¿Quieres que te explique cómo funciona en 5 min?
+👉 https://hablaconunexperto.exora.app`,
+  ca: (name: string) => `Hola ${name} 👋
+Sóc en Juanjo d'Exora.
+He vist que t'ha interessat el nostre anunci —volia explicar-te que ara pots tenir la teva pròpia app de reserves personalitzada des de 34,90 €/mes (preu promocional per haver emplenat el formulari).
 
-Por eso Exora es diferente:
-✓ Tu propia app, con tu logo y tu marca
-✓ Reservas 24/7 automáticas (sin perder ni una)
-✓ Cobros online integrados
-✓ 0 competencia, solo tu negocio
+Sense competència, sense comissions i amb els teus clients sota el teu control.
 
-Y lo mejor: 15 días gratis para probarlo sin compromiso.
-
-¿Hablamos? Agenda aquí cuando te venga bien:
-https://hablaconunexperto.exora.app
-
-O entra directamente en https://exora.app, te registras en 5 minutos y yo me encargo de ayudarte con toda la configuración.
-
-¿Te animas?`,
-    "reservas-fuera-horario": (name: string) => `Hola ${name}
-
-Soy Juanjo de Exora. Vi que te interesó nuestro video sobre las reservas fuera de horario.
-
-Imagino lo frustrante que es: pierdes el 40% de las reservas porque llaman cuando estás cerrado... y el otro 60% te interrumpe mientras estás con otro cliente. Tijeras en mano, teléfono sonando.
-
-Con Exora esto se acabó:
-✓ Reservas automáticas 24/7 (capturas ese 40% perdido)
-✓ Cero interrupciones mientras trabajas
-✓ Cobros online integrados
-✓ Tu propia app, con tu marca
-
-Resultado: más reservas, menos estrés, más tiempo para lo que importa.
-
-15 días gratis para probarlo, sin compromiso.
-
-¿Hablamos? Agenda aquí cuando te venga bien: https://hablaconunexperto.exora.app
-
-O entra directamente en https://exora.app, te registras en 5 minutos y yo me encargo de ayudarte con toda la configuración.
-
-¿Te animas?`,
-    "sin-competencia": (name: string) => `Hola ${name}
-
-Soy Juanjo de Exora. Vi que te interesó nuestro video sobre dejar de compartir app con tu competencia.
-
-Te entiendo: trabajas duro para fidelizar a tus clientes... y luego entran en una app donde ven otras 10 barberías/peluquerías. Un clic y los pierdes.
-
-¿Por qué regalar lo que tanto te costó conseguir?
-
-Con Exora:
-✓ Tu propia app, solo tu negocio
-✓ Tu logo, tu marca, tu identidad
-✓ 0 competencia dentro
-✓ Tus clientes son tuyos, siempre
-✓ Reservas y cobros 100% bajo tu control
-
-Tu marca merece brillar sola, no escondida entre otras.
-
-15 días gratis para probarlo, sin compromiso.
-
-¿Hablamos? Agenda aquí cuando te venga bien: https://hablaconunexperto.exora.app
-
-O entra directamente en https://exora.app, te registras en 5 minutos y yo me encargo de ayudarte con toda la configuración.
-
-¿Te animas?`,
-  },
-  ca: {
-    "app-general": (name: string) => `Hola ${name}
-
-Sóc en Juanjo d'Exora. He vist que t'ha interessat el nostre vídeo sobre l'app de reserves.
-
-T'entenc perfectament: perdre reserves fora d'horari o compartir app amb la teva competència és frustrant.
-
-Per això Exora és diferent:
-✓ La teva pròpia app, amb el teu logo i la teva marca
-✓ Reserves 24/7 automàtiques (sense perdre'n ni una)
-✓ Cobraments online integrats
-✓ 0 competència, només el teu negoci
-
-I el millor: 15 dies gratis per provar-ho sense compromís.
-
-Parlem? Agenda aquí quan et vagi bé:
-https://hablaconunexperto.exora.app
-
-O entra directament a https://exora.app, et registres en 5 minuts i jo m'encarrego d'ajudar-te amb tota la configuració.
-
-T'animes?`,
-    "reservas-fuera-horario": (name: string) => `Hola ${name}
-
-Sóc en Juanjo d'Exora. He vist que t'ha interessat el nostre vídeo sobre les reserves fora d'horari.
-
-M'imagino el frustrant que és: perds el 40% de les reserves perquè truquen quan estàs tancat... i l'altre 60% t'interromp mentre estàs amb un altre client. Tisores a la mà, telèfon sonant.
-
-Amb Exora això s'ha acabat:
-✓ Reserves automàtiques 24/7 (captures aquest 40% perdut)
-✓ Zero interrupcions mentre treballes
-✓ Cobraments online integrats
-✓ La teva pròpia app, amb la teva marca
-
-Resultat: més reserves, menys estrès, més temps per al que importa.
-
-15 dies gratis per provar-ho, sense compromís.
-
-Parlem? Agenda aquí quan et vagi bé: https://hablaconunexperto.exora.app
-
-O entra directament a https://exora.app, et registres en 5 minuts i jo m'encarrego d'ajudar-te amb tota la configuració.
-
-T'animes?`,
-    "sin-competencia": (name: string) => `Hola ${name}
-
-Sóc en Juanjo d'Exora. He vist que t'ha interessat el nostre vídeo sobre deixar de compartir app amb la teva competència.
-
-T'entenc: treballes dur per fidelitzar els teus clients... i després entren en una app on veuen altres 10 barberies/perruqueries. Un clic i els perds.
-
-Per què regalar el que tant et va costar aconseguir?
-
-Amb Exora:
-✓ La teva pròpia app, només el teu negoci
-✓ El teu logo, la teva marca, la teva identitat
-✓ 0 competència dins
-✓ Els teus clients són teus, sempre
-✓ Reserves i cobraments 100% sota el teu control
-
-La teva marca mereix brillar sola, no amagada entre d'altres.
-
-15 dies gratis per provar-ho, sense compromís.
-
-Parlem? Agenda aquí quan et vagi bé: https://hablaconunexperto.exora.app
-
-O entra directament a https://exora.app, et registres en 5 minuts i jo m'encarrego d'ajudar-te amb tota la configuració.
-
-T'animes?`,
-  },
+Vols que t'expliqui com funciona en 5 min?
+👉 https://hablaconunexperto.exora.app`,
 };
 
-const MESSAGE_LABELS = {
-  es: {
-    "app-general": "App de Reservas (General)",
-    "reservas-fuera-horario": "Reservas Fuera de Horario",
-    "sin-competencia": "Sin Competencia",
-  },
-  ca: {
-    "app-general": "App de Reserves (General)",
-    "reservas-fuera-horario": "Reserves Fora d'Horari",
-    "sin-competencia": "Sense Competència",
-  },
-};
 
 export function LeadMessageGenerator() {
   const [leads, setLeads] = useState<Lead[]>([
     { id: "1", name: "", phoneNumber: "" },
   ]);
-  const [messageType, setMessageType] = useState<MessageType>("app-general");
   const [language, setLanguage] = useState<Language>("es");
+  const [customMessage, setCustomMessage] = useState<string>(
+    DEFAULT_MESSAGE.es("[Nombre]")
+  );
+
+  // Actualizar el mensaje cuando cambia el idioma
+  const handleLanguageChange = (newLanguage: Language) => {
+    setLanguage(newLanguage);
+    const leadName = leads[0]?.name || "[Nombre]";
+    setCustomMessage(DEFAULT_MESSAGE[newLanguage](leadName));
+  };
+
+  // Actualizar el mensaje cuando cambia el nombre del primer lead
+  const handleLeadNameChange = (id: string, name: string) => {
+    updateLead(id, "name", name);
+    if (id === leads[0]?.id) {
+      const messageName = name.trim() || "[Nombre]";
+      setCustomMessage(DEFAULT_MESSAGE[language](messageName));
+    }
+  };
 
   const addLead = () => {
     setLeads([
@@ -196,7 +82,8 @@ export function LeadMessageGenerator() {
   };
 
   const generateWhatsAppLink = (name: string, phone: string) => {
-    const message = MESSAGES[language][messageType](name || "[Nombre]");
+    // Reemplazar [Nombre] con el nombre real en el mensaje personalizado
+    const message = customMessage.replace(/\[Nombre\]/g, name || "[Nombre]");
     const cleanPhone = phone.replace(/\D/g, "");
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
@@ -242,7 +129,7 @@ export function LeadMessageGenerator() {
                   : "Completa la informació del client per generar el missatge"}
               </CardDescription>
             </div>
-            <Tabs value={language} onValueChange={(v) => setLanguage(v as Language)}>
+            <Tabs value={language} onValueChange={(v) => handleLanguageChange(v as Language)}>
               <TabsList className="grid w-full grid-cols-2 sm:w-auto">
                 <TabsTrigger value="es">Español</TabsTrigger>
                 <TabsTrigger value="ca">Català</TabsTrigger>
@@ -251,29 +138,6 @@ export function LeadMessageGenerator() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Tipo de mensaje */}
-          <div className="space-y-2">
-            <Label htmlFor="messageType">
-              {language === "es" ? "Tipo de Mensaje" : "Tipus de Missatge"}
-            </Label>
-            <Select value={messageType} onValueChange={(v) => setMessageType(v as MessageType)}>
-              <SelectTrigger id="messageType">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="app-general">
-                  {MESSAGE_LABELS[language]["app-general"]}
-                </SelectItem>
-                <SelectItem value="reservas-fuera-horario">
-                  {MESSAGE_LABELS[language]["reservas-fuera-horario"]}
-                </SelectItem>
-                <SelectItem value="sin-competencia">
-                  {MESSAGE_LABELS[language]["sin-competencia"]}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Leads */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -315,7 +179,7 @@ export function LeadMessageGenerator() {
                     <Input
                       placeholder={language === "es" ? "Nombre del cliente" : "Nom del client"}
                       value={lead.name}
-                      onChange={(e) => updateLead(lead.id, "name", e.target.value)}
+                      onChange={(e) => handleLeadNameChange(lead.id, e.target.value)}
                     />
                   </div>
                   
@@ -347,19 +211,23 @@ export function LeadMessageGenerator() {
             </div>
           </div>
 
-          {/* Vista previa del mensaje */}
+          {/* Vista previa del mensaje - Editable */}
           <div className="space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <Label>
-                {language === "es" ? "Vista Previa del Mensaje" : "Vista Prèvia del Missatge"}
-              </Label>
-              <Badge variant="secondary" className="w-fit">
-                {MESSAGE_LABELS[language][messageType]}
-              </Badge>
-            </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 sm:p-4 whitespace-pre-wrap text-sm max-h-[400px] overflow-y-auto">
-              {MESSAGES[language][messageType](leads[0]?.name || "[Nombre]")}
-            </div>
+            <Label htmlFor="messagePreview">
+              {language === "es" ? "Vista Previa del Mensaje" : "Vista Prèvia del Missatge"}
+            </Label>
+            <Textarea
+              id="messagePreview"
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+              className="min-h-[300px] font-mono text-sm whitespace-pre-wrap"
+              placeholder={language === "es" ? "Edita tu mensaje aquí..." : "Edita el teu missatge aquí..."}
+            />
+            <p className="text-xs text-slate-500">
+              {language === "es"
+                ? "💡 Usa [Nombre] como marcador de posición que se reemplazará con el nombre de cada cliente"
+                : "💡 Utilitza [Nombre] com a marcador que es reemplaçarà amb el nom de cada client"}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -373,8 +241,8 @@ export function LeadMessageGenerator() {
           <ul className="space-y-1.5 text-sm text-emerald-800">
             <li>
               {language === "es"
-                ? "1. Selecciona el tipo de mensaje según el video que le interesó al cliente"
-                : "1. Selecciona el tipus de missatge segons el vídeo que li va interessar al client"}
+                ? "1. Edita el mensaje en la vista previa según tus necesidades"
+                : "1. Edita el missatge a la vista prèvia segons les teves necessitats"}
             </li>
             <li>
               {language === "es"
