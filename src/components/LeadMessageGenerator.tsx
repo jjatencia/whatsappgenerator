@@ -4,19 +4,24 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
-import { MessageSquare, Plus, X, Send } from "lucide-react";
+import { MessageSquare, Plus, X, Send, Copy } from "lucide-react";
 import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 type Language = "es" | "ca";
+type MessageTemplate = "short" | "long";
 
 interface Lead {
   id: string;
   name: string;
   phoneNumber: string;
+  customMessage: string;
+  selectedTemplate: MessageTemplate;
 }
 
-const DEFAULT_MESSAGE = {
-  es: (name: string) => `Hola ${name} 👋
+const MESSAGE_TEMPLATES = {
+  es: {
+    short: (name: string) => `Hola ${name} 👋
 Soy Juanjo de Exora.
 Vi que te interesó nuestro anuncio —quería contarte que ahora puedes tener tu propia app de reservas personalizada desde 34,90 €/mes (precio promocional por haber rellenado el formulario).
 
@@ -24,7 +29,27 @@ Sin competencia, sin comisiones y con tus clientes bajo tu control.
 
 ¿Quieres que te explique cómo funciona en 5 min?
 👉 https://hablaconunexperto.exora.app`,
-  ca: (name: string) => `Hola ${name} 👋
+    long: (name: string) => `Hola ${name} 👋
+Soy Juanjo de Exora. Vi que te interesaste por nuestro anuncio —quería contarte algo rápido.
+
+Sé lo que pasa: te esfuerzas por fidelizar clientes… pero luego reservan desde una app donde también salen tus competidores. Un clic y los pierdes.
+
+Con Exora eso se acabó:
+✅ Tu propia app, solo con tu negocio
+✅ Tus precios, tus horarios y tus clientes —bajo tu control
+✅ Sin comisiones ni competencia dentro
+
+💡 Por haber rellenado el formulario, tienes acceso a una oferta especial:
+👉 Tu app personalizada desde 34,90 €/mes (precio promocional)
+(válido solo esta semana para nuevos registros)
+
+Si quieres, te explico cómo funciona en 5 min por llamada o WhatsApp.
+¿Te va bien ahora o prefieres que te escriba más tarde?
+
+También puedes agendar directamente aquí 👉 https://hablaconunexperto.exora.app`,
+  },
+  ca: {
+    short: (name: string) => `Hola ${name} 👋
 Sóc en Juanjo d'Exora.
 He vist que t'ha interessat el nostre anunci —volia explicar-te que ara pots tenir la teva pròpia app de reserves personalitzada des de 34,90 €/mes (preu promocional per haver emplenat el formulari).
 
@@ -32,38 +57,108 @@ Sense competència, sense comissions i amb els teus clients sota el teu control.
 
 Vols que t'expliqui com funciona en 5 min?
 👉 https://hablaconunexperto.exora.app`,
+    long: (name: string) => `Hola ${name} 👋
+Sóc en Juanjo d'Exora. He vist que t'ha interessat el nostre anunci —volia explicar-te una cosa ràpidament.
+
+Sé el que passa: t'esforces per fidelitzar clients… però després reserven des d'una app on també surten els teus competidors. Un clic i els perds.
+
+Amb Exora això s'ha acabat:
+✅ La teva pròpia app, només amb el teu negoci
+✅ Els teus preus, els teus horaris i els teus clients —sota el teu control
+✅ Sense comissions ni competència dins
+
+💡 Per haver emplenat el formulari, tens accés a una oferta especial:
+👉 La teva app personalitzada des de 34,90 €/mes (preu promocional)
+(vàlid només aquesta setmana per a nous registres)
+
+Si vols, t'explico com funciona en 5 min per trucada o WhatsApp.
+Et va bé ara o prefereixes que t'escrigui més tard?
+
+També pots agendar directament aquí 👉 https://hablaconunexperto.exora.app`,
+  },
+};
+
+const TEMPLATE_LABELS = {
+  es: {
+    short: "Mensaje Corto (Promocional)",
+    long: "Mensaje Largo (Completo)",
+  },
+  ca: {
+    short: "Missatge Curt (Promocional)",
+    long: "Missatge Llarg (Complet)",
+  },
 };
 
 
 export function LeadMessageGenerator() {
-  const [leads, setLeads] = useState<Lead[]>([
-    { id: "1", name: "", phoneNumber: "" },
-  ]);
   const [language, setLanguage] = useState<Language>("es");
-  const [customMessage, setCustomMessage] = useState<string>(
-    DEFAULT_MESSAGE.es("[Nombre]")
-  );
+  const [leads, setLeads] = useState<Lead[]>([
+    {
+      id: "1",
+      name: "",
+      phoneNumber: "",
+      customMessage: MESSAGE_TEMPLATES.es.short("[Nombre]"),
+      selectedTemplate: "short",
+    },
+  ]);
 
   // Actualizar el mensaje cuando cambia el idioma
   const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage);
-    const leadName = leads[0]?.name || "[Nombre]";
-    setCustomMessage(DEFAULT_MESSAGE[newLanguage](leadName));
+    // Actualizar todos los mensajes al nuevo idioma
+    setLeads(leads.map(lead => ({
+      ...lead,
+      customMessage: MESSAGE_TEMPLATES[newLanguage][lead.selectedTemplate](lead.name || "[Nombre]"),
+    })));
   };
 
-  // Actualizar el mensaje cuando cambia el nombre del primer lead
+  // Actualizar el nombre de un lead
   const handleLeadNameChange = (id: string, name: string) => {
-    updateLead(id, "name", name);
-    if (id === leads[0]?.id) {
-      const messageName = name.trim() || "[Nombre]";
-      setCustomMessage(DEFAULT_MESSAGE[language](messageName));
-    }
+    setLeads(leads.map(lead => {
+      if (lead.id === id) {
+        const messageName = name.trim() || "[Nombre]";
+        return {
+          ...lead,
+          name,
+          customMessage: MESSAGE_TEMPLATES[language][lead.selectedTemplate](messageName),
+        };
+      }
+      return lead;
+    }));
+  };
+
+  // Cambiar la plantilla de mensaje de un lead
+  const handleTemplateChange = (id: string, template: MessageTemplate) => {
+    setLeads(leads.map(lead => {
+      if (lead.id === id) {
+        const messageName = lead.name.trim() || "[Nombre]";
+        return {
+          ...lead,
+          selectedTemplate: template,
+          customMessage: MESSAGE_TEMPLATES[language][template](messageName),
+        };
+      }
+      return lead;
+    }));
+  };
+
+  // Actualizar el mensaje personalizado de un lead
+  const handleCustomMessageChange = (id: string, message: string) => {
+    setLeads(leads.map(lead =>
+      lead.id === id ? { ...lead, customMessage: message } : lead
+    ));
   };
 
   const addLead = () => {
     setLeads([
       ...leads,
-      { id: Date.now().toString(), name: "", phoneNumber: "" },
+      {
+        id: Date.now().toString(),
+        name: "",
+        phoneNumber: "",
+        customMessage: MESSAGE_TEMPLATES[language].short("[Nombre]"),
+        selectedTemplate: "short",
+      },
     ]);
   };
 
@@ -73,32 +168,30 @@ export function LeadMessageGenerator() {
     }
   };
 
-  const updateLead = (id: string, field: "name" | "phoneNumber", value: string) => {
-    setLeads(
-      leads.map((lead) =>
-        lead.id === id ? { ...lead, [field]: value } : lead
-      )
-    );
+  const updateLeadPhone = (id: string, phoneNumber: string) => {
+    setLeads(leads.map(lead =>
+      lead.id === id ? { ...lead, phoneNumber } : lead
+    ));
   };
 
-  const generateWhatsAppLink = (name: string, phone: string) => {
+  const generateWhatsAppLink = (lead: Lead) => {
     // Reemplazar [Nombre] con el nombre real en el mensaje personalizado
-    const message = customMessage.replace(/\[Nombre\]/g, name || "[Nombre]");
-    const cleanPhone = phone.replace(/\D/g, "");
+    const message = lead.customMessage.replace(/\[Nombre\]/g, lead.name || "[Nombre]");
+    const cleanPhone = lead.phoneNumber.replace(/\D/g, "");
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
   };
 
-  const openWhatsApp = (name: string, phone: string) => {
-    if (!phone.trim()) {
+  const openWhatsApp = (lead: Lead) => {
+    if (!lead.phoneNumber.trim()) {
       alert(language === "es" ? "Por favor, ingresa un número de teléfono" : "Si us plau, introdueix un número de telèfon");
       return;
     }
-    if (!name.trim()) {
+    if (!lead.name.trim()) {
       alert(language === "es" ? "Por favor, ingresa el nombre del cliente" : "Si us plau, introdueix el nom del client");
       return;
     }
-    const link = generateWhatsAppLink(name, phone);
+    const link = generateWhatsAppLink(lead);
     window.open(link, "_blank");
   };
 
@@ -158,9 +251,9 @@ export function LeadMessageGenerator() {
 
             <div className="space-y-4">
               {leads.map((lead, index) => (
-                <div key={lead.id} className="p-4 border border-slate-200 rounded-lg bg-white space-y-3">
+                <div key={lead.id} className="p-4 border-2 border-slate-200 rounded-lg bg-white space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">
+                    <span className="text-sm font-semibold text-slate-700">
                       {language === "es" ? "Cliente" : "Client"} #{index + 1}
                     </span>
                     {leads.length > 1 && (
@@ -174,60 +267,91 @@ export function LeadMessageGenerator() {
                       </Button>
                     )}
                   </div>
-                  
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor={`name-${lead.id}`} className="text-xs">
+                        {language === "es" ? "Nombre" : "Nom"}
+                      </Label>
+                      <Input
+                        id={`name-${lead.id}`}
+                        placeholder={language === "es" ? "Nombre del cliente" : "Nom del client"}
+                        value={lead.name}
+                        onChange={(e) => handleLeadNameChange(lead.id, e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`phone-${lead.id}`} className="text-xs">
+                        {language === "es" ? "Teléfono" : "Telèfon"}
+                      </Label>
+                      <Input
+                        id={`phone-${lead.id}`}
+                        placeholder={
+                          language === "es"
+                            ? "Ej: +34612345678"
+                            : "Ex: +34612345678"
+                        }
+                        value={lead.phoneNumber}
+                        onChange={(e) => updateLeadPhone(lead.id, e.target.value)}
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Input
-                      placeholder={language === "es" ? "Nombre del cliente" : "Nom del client"}
-                      value={lead.name}
-                      onChange={(e) => handleLeadNameChange(lead.id, e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      placeholder={
-                        language === "es"
-                          ? "Número de teléfono (ej: +34612345678)"
-                          : "Número de telèfon (ex: +34612345678)"
-                      }
-                      value={lead.phoneNumber}
-                      onChange={(e) => updateLead(lead.id, "phoneNumber", e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="default"
-                      size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
-                      onClick={() => openWhatsApp(lead.name, lead.phoneNumber)}
-                      disabled={!lead.phoneNumber.trim() || !lead.name.trim()}
+                    <Label htmlFor={`template-${lead.id}`} className="text-xs">
+                      {language === "es" ? "Plantilla de Mensaje" : "Plantilla de Missatge"}
+                    </Label>
+                    <Select
+                      value={lead.selectedTemplate}
+                      onValueChange={(v) => handleTemplateChange(lead.id, v as MessageTemplate)}
                     >
-                      <Send className="w-4 h-4 mr-2" />
-                      WhatsApp
-                    </Button>
+                      <SelectTrigger id={`template-${lead.id}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="short">
+                          {TEMPLATE_LABELS[language].short}
+                        </SelectItem>
+                        <SelectItem value="long">
+                          {TEMPLATE_LABELS[language].long}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`message-${lead.id}`} className="text-xs">
+                      {language === "es" ? "Mensaje Personalizado" : "Missatge Personalitzat"}
+                    </Label>
+                    <Textarea
+                      id={`message-${lead.id}`}
+                      value={lead.customMessage}
+                      onChange={(e) => handleCustomMessageChange(lead.id, e.target.value)}
+                      className="min-h-[200px] font-mono text-xs whitespace-pre-wrap"
+                      placeholder={language === "es" ? "Edita el mensaje aquí..." : "Edita el missatge aquí..."}
+                    />
+                    <p className="text-xs text-slate-500">
+                      {language === "es"
+                        ? "💡 Usa [Nombre] como marcador que se reemplazará automáticamente"
+                        : "💡 Utilitza [Nombre] com a marcador que es reemplaçarà automàticament"}
+                    </p>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="default"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => openWhatsApp(lead)}
+                    disabled={!lead.phoneNumber.trim() || !lead.name.trim()}
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    {language === "es" ? "Enviar por WhatsApp" : "Enviar per WhatsApp"}
+                  </Button>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Vista previa del mensaje - Editable */}
-          <div className="space-y-2">
-            <Label htmlFor="messagePreview">
-              {language === "es" ? "Vista Previa del Mensaje" : "Vista Prèvia del Missatge"}
-            </Label>
-            <Textarea
-              id="messagePreview"
-              value={customMessage}
-              onChange={(e) => setCustomMessage(e.target.value)}
-              className="min-h-[300px] font-mono text-sm whitespace-pre-wrap"
-              placeholder={language === "es" ? "Edita tu mensaje aquí..." : "Edita el teu missatge aquí..."}
-            />
-            <p className="text-xs text-slate-500">
-              {language === "es"
-                ? "💡 Usa [Nombre] como marcador de posición que se reemplazará con el nombre de cada cliente"
-                : "💡 Utilitza [Nombre] com a marcador que es reemplaçarà amb el nom de cada client"}
-            </p>
           </div>
         </CardContent>
       </Card>
@@ -241,23 +365,28 @@ export function LeadMessageGenerator() {
           <ul className="space-y-1.5 text-sm text-emerald-800">
             <li>
               {language === "es"
-                ? "1. Edita el mensaje en la vista previa según tus necesidades"
-                : "1. Edita el missatge a la vista prèvia segons les teves necessitats"}
+                ? "1. Ingresa el nombre y número de teléfono de cada cliente"
+                : "1. Introdueix el nom i número de telèfon de cada client"}
             </li>
             <li>
               {language === "es"
-                ? "2. Ingresa el nombre y número de teléfono de cada cliente"
-                : "2. Introdueix el nom i número de telèfon de cada client"}
+                ? "2. Selecciona la plantilla de mensaje (corta o larga)"
+                : "2. Selecciona la plantilla de missatge (curt o llarg)"}
             </li>
             <li>
               {language === "es"
-                ? "3. Puedes añadir múltiples clientes con el botón 'Añadir cliente'"
-                : "3. Pots afegir múltiples clients amb el botó 'Afegir client'"}
+                ? "3. Edita el mensaje personalizado para cada cliente si lo necesitas"
+                : "3. Edita el missatge personalitzat per a cada client si ho necessites"}
             </li>
             <li>
               {language === "es"
-                ? "4. Haz clic en 'WhatsApp' para abrir la conversación con el mensaje personalizado"
-                : "4. Fes clic a 'WhatsApp' per obrir la conversa amb el missatge personalitzat"}
+                ? "4. Añade más clientes con el botón 'Añadir cliente' si quieres enviar a varios"
+                : "4. Afegeix més clients amb el botó 'Afegir client' si vols enviar a diversos"}
+            </li>
+            <li>
+              {language === "es"
+                ? "5. Haz clic en 'Enviar por WhatsApp' en cada cliente para abrir la conversación"
+                : "5. Fes clic a 'Enviar per WhatsApp' a cada client per obrir la conversa"}
             </li>
           </ul>
         </CardContent>
