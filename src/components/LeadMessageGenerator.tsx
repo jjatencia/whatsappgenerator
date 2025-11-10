@@ -9,7 +9,7 @@ import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 type Language = "es" | "ca";
-type MessageTemplate = "short" | "long";
+type MessageTemplate = "short" | "long" | "trial";
 
 interface Lead {
   id: string;
@@ -47,6 +47,16 @@ Si quieres, te explico cómo funciona en 5 min por llamada o WhatsApp.
 ¿Te va bien ahora o prefieres que te escriba más tarde?
 
 También puedes agendar directamente aquí 👉 https://hablaconunexperto.exora.app`,
+    trial: (name: string) => `Hola ${name} 👋
+
+Soy [NombreAgente] de Exora. Como te comenté, te dejo por aquí el enlace para darte de alta en la prueba gratuita 👇
+
+🔗 https://exora.app
+
+Solo tienes que entrar y hacer clic en el botón "Prueba Gratis".
+El registro tarda menos de un minuto, y una vez dentro te ayudaremos con todo el proceso de configuración para que puedas empezar a recibir reservas online de inmediato.
+
+Cuando te hayas registrado, avísame por aquí y te acompaño con los siguientes pasos.`,
   },
   ca: {
     short: (name: string) => `Hola ${name} 👋
@@ -75,6 +85,16 @@ Si vols, t'explico com funciona en 5 min per trucada o WhatsApp.
 Et va bé ara o prefereixes que t'escrigui més tard?
 
 També pots agendar directament aquí 👉 https://hablaconunexperto.exora.app`,
+    trial: (name: string) => `Hola ${name} 👋
+
+Sóc [NombreAgente] d'Exora. Com et vaig comentar, et deixo per aquí l'enllaç per donar-te d'alta a la prova gratuïta 👇
+
+🔗 https://exora.app
+
+Només has d'entrar i fer clic al botó "Prova Gratis".
+El registre triga menys d'un minut, i un cop dins t'ajudarem amb tot el procés de configuració perquè puguis començar a rebre reserves online de manera immediata.
+
+Quan t'hagis registrat, avisa'm per aquí i t'acompanyo amb els següents passos.`,
   },
 };
 
@@ -82,10 +102,12 @@ const TEMPLATE_LABELS = {
   es: {
     short: "Mensaje Corto (Promocional)",
     long: "Mensaje Largo (Completo)",
+    trial: "Registro Prueba Gratuita",
   },
   ca: {
     short: "Missatge Curt (Promocional)",
     long: "Missatge Llarg (Complet)",
+    trial: "Registre Prova Gratuïta",
   },
 };
 
@@ -316,6 +338,9 @@ export function LeadMessageGenerator() {
                         <SelectItem value="long">
                           {TEMPLATE_LABELS[language].long}
                         </SelectItem>
+                        <SelectItem value="trial">
+                          {TEMPLATE_LABELS[language].trial}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -333,8 +358,8 @@ export function LeadMessageGenerator() {
                     />
                     <p className="text-xs text-slate-500">
                       {language === "es"
-                        ? "💡 Usa [Nombre] como marcador que se reemplazará automáticamente"
-                        : "💡 Utilitza [Nombre] com a marcador que es reemplaçarà automàticament"}
+                        ? "💡 Usa [Nombre] para el cliente y [NombreAgente] para tu nombre (ej: Juanjo, Jordi, etc.)"
+                        : "💡 Utilitza [Nombre] pel client i [NombreAgente] pel teu nom (ex: Juanjo, Jordi, etc.)"}
                     </p>
                   </div>
 
