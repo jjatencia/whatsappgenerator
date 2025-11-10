@@ -114,6 +114,7 @@ const TEMPLATE_LABELS = {
 
 export function LeadMessageGenerator() {
   const [language, setLanguage] = useState<Language>("es");
+  const [agentName, setAgentName] = useState<string>("Juanjo");
   const [leads, setLeads] = useState<Lead[]>([
     {
       id: "1",
@@ -197,8 +198,9 @@ export function LeadMessageGenerator() {
   };
 
   const generateWhatsAppLink = (lead: Lead) => {
-    // Reemplazar [Nombre] con el nombre real en el mensaje personalizado
-    const message = lead.customMessage.replace(/\[Nombre\]/g, lead.name || "[Nombre]");
+    // Reemplazar [Nombre] y [NombreAgente] con los nombres reales en el mensaje personalizado
+    let message = lead.customMessage.replace(/\[Nombre\]/g, lead.name || "[Nombre]");
+    message = message.replace(/\[NombreAgente\]/g, agentName || "Juanjo");
     const cleanPhone = lead.phoneNumber.replace(/\D/g, "");
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
@@ -253,6 +255,25 @@ export function LeadMessageGenerator() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Nombre del Agente */}
+          <div className="space-y-2 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-lg">
+            <Label htmlFor="agent-name" className="text-sm font-semibold text-emerald-900">
+              {language === "es" ? "Tu Nombre (Agente)" : "El Teu Nom (Agent)"}
+            </Label>
+            <Input
+              id="agent-name"
+              placeholder={language === "es" ? "Ej: Juanjo, Jordi, etc." : "Ex: Juanjo, Jordi, etc."}
+              value={agentName}
+              onChange={(e) => setAgentName(e.target.value)}
+              className="bg-white"
+            />
+            <p className="text-xs text-emerald-700">
+              {language === "es"
+                ? "💡 Este nombre reemplazará [NombreAgente] en todos los mensajes"
+                : "💡 Aquest nom reemplaçarà [NombreAgente] a tots els missatges"}
+            </p>
+          </div>
+
           {/* Leads */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
