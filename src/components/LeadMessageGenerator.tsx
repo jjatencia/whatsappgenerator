@@ -9,7 +9,7 @@ import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 type Language = "es" | "ca";
-type MessageTemplate = "short" | "long";
+type MessageTemplate = "short" | "long" | "trial";
 
 interface Lead {
   id: string;
@@ -47,6 +47,16 @@ Si quieres, te explico cómo funciona en 5 min por llamada o WhatsApp.
 ¿Te va bien ahora o prefieres que te escriba más tarde?
 
 También puedes agendar directamente aquí 👉 https://hablaconunexperto.exora.app`,
+    trial: (name: string) => `Hola ${name} 👋
+
+Soy [NombreAgente] de Exora. Como te comenté, te dejo por aquí el enlace para darte de alta en la prueba gratuita 👇
+
+🔗 https://exora.app
+
+Solo tienes que entrar y hacer clic en el botón "Prueba Gratis".
+El registro tarda menos de un minuto, y una vez dentro te ayudaremos con todo el proceso de configuración para que puedas empezar a recibir reservas online de inmediato.
+
+Cuando te hayas registrado, avísame por aquí y te acompaño con los siguientes pasos.`,
   },
   ca: {
     short: (name: string) => `Hola ${name} 👋
@@ -75,6 +85,16 @@ Si vols, t'explico com funciona en 5 min per trucada o WhatsApp.
 Et va bé ara o prefereixes que t'escrigui més tard?
 
 També pots agendar directament aquí 👉 https://hablaconunexperto.exora.app`,
+    trial: (name: string) => `Hola ${name} 👋
+
+Sóc [NombreAgente] d'Exora. Com et vaig comentar, et deixo per aquí l'enllaç per donar-te d'alta a la prova gratuïta 👇
+
+🔗 https://exora.app
+
+Només has d'entrar i fer clic al botó "Prova Gratis".
+El registre triga menys d'un minut, i un cop dins t'ajudarem amb tot el procés de configuració perquè puguis començar a rebre reserves online de manera immediata.
+
+Quan t'hagis registrat, avisa'm per aquí i t'acompanyo amb els següents passos.`,
   },
 };
 
@@ -82,16 +102,19 @@ const TEMPLATE_LABELS = {
   es: {
     short: "Mensaje Corto (Promocional)",
     long: "Mensaje Largo (Completo)",
+    trial: "Registro Prueba Gratuita",
   },
   ca: {
     short: "Missatge Curt (Promocional)",
     long: "Missatge Llarg (Complet)",
+    trial: "Registre Prova Gratuïta",
   },
 };
 
 
 export function LeadMessageGenerator() {
   const [language, setLanguage] = useState<Language>("es");
+  const [agentName, setAgentName] = useState<string>("Juanjo");
   const [leads, setLeads] = useState<Lead[]>([
     {
       id: "1",
@@ -175,8 +198,9 @@ export function LeadMessageGenerator() {
   };
 
   const generateWhatsAppLink = (lead: Lead) => {
-    // Reemplazar [Nombre] con el nombre real en el mensaje personalizado
-    const message = lead.customMessage.replace(/\[Nombre\]/g, lead.name || "[Nombre]");
+    // Reemplazar [Nombre] y [NombreAgente] con los nombres reales en el mensaje personalizado
+    let message = lead.customMessage.replace(/\[Nombre\]/g, lead.name || "[Nombre]");
+    message = message.replace(/\[NombreAgente\]/g, agentName || "Juanjo");
     const cleanPhone = lead.phoneNumber.replace(/\D/g, "");
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
@@ -231,6 +255,25 @@ export function LeadMessageGenerator() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Nombre del Agente */}
+          <div className="space-y-2 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-lg">
+            <Label htmlFor="agent-name" className="text-sm font-semibold text-emerald-900">
+              {language === "es" ? "Tu Nombre (Agente)" : "El Teu Nom (Agent)"}
+            </Label>
+            <Input
+              id="agent-name"
+              placeholder={language === "es" ? "Ej: Juanjo, Jordi, etc." : "Ex: Juanjo, Jordi, etc."}
+              value={agentName}
+              onChange={(e) => setAgentName(e.target.value)}
+              className="bg-white"
+            />
+            <p className="text-xs text-emerald-700">
+              {language === "es"
+                ? "💡 Este nombre reemplazará [NombreAgente] en todos los mensajes"
+                : "💡 Aquest nom reemplaçarà [NombreAgente] a tots els missatges"}
+            </p>
+          </div>
+
           {/* Leads */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -316,6 +359,9 @@ export function LeadMessageGenerator() {
                         <SelectItem value="long">
                           {TEMPLATE_LABELS[language].long}
                         </SelectItem>
+                        <SelectItem value="trial">
+                          {TEMPLATE_LABELS[language].trial}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -333,8 +379,8 @@ export function LeadMessageGenerator() {
                     />
                     <p className="text-xs text-slate-500">
                       {language === "es"
-                        ? "💡 Usa [Nombre] como marcador que se reemplazará automáticamente"
-                        : "💡 Utilitza [Nombre] com a marcador que es reemplaçarà automàticament"}
+                        ? "💡 Usa [Nombre] para el cliente y [NombreAgente] para tu nombre (ej: Juanjo, Jordi, etc.)"
+                        : "💡 Utilitza [Nombre] pel client i [NombreAgente] pel teu nom (ex: Juanjo, Jordi, etc.)"}
                     </p>
                   </div>
 
