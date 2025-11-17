@@ -219,6 +219,34 @@ export function LeadMessageGenerator() {
     window.open(link, "_blank");
   };
 
+  // Generar formato para atajo de Apple
+  const generateShortcutFormat = () => {
+    const validLeads = leads.filter(lead => lead.phoneNumber.trim() && lead.name.trim());
+
+    if (validLeads.length === 0) {
+      alert(language === "es"
+        ? "No hay clientes válidos con nombre y teléfono"
+        : "No hi ha clients vàlids amb nom i telèfon");
+      return;
+    }
+
+    const formatted = validLeads.map(lead => {
+      const message = lead.customMessage.replace(/\[Nombre\]/g, lead.name);
+      const cleanPhone = lead.phoneNumber.replace(/\D/g, "");
+      return `${cleanPhone} ||| ${message}`;
+    }).join('\n\n');
+
+    navigator.clipboard.writeText(formatted).then(() => {
+      alert(language === "es"
+        ? `✅ Copiado! ${validLeads.length} mensaje(s) listo(s) para el atajo EnviarWhatsappLBJ`
+        : `✅ Copiat! ${validLeads.length} missatge(s) preparat(s) per a l'atajo EnviarWhatsappLBJ`);
+    }).catch(() => {
+      alert(language === "es"
+        ? "Error al copiar. Intenta de nuevo."
+        : "Error en copiar. Intenta de nou.");
+    });
+  };
+
   return (
     <div className="container max-w-4xl mx-auto p-4 sm:p-6 py-6 sm:py-12">
       <div className="mb-6 sm:mb-8 text-center">
@@ -280,16 +308,28 @@ export function LeadMessageGenerator() {
               <Label>
                 {language === "es" ? "Clientes (Leads)" : "Clients (Leads)"}
               </Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addLead}
-                className="w-full sm:w-auto"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                {language === "es" ? "Añadir cliente" : "Afegir client"}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addLead}
+                  className="w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  {language === "es" ? "Añadir cliente" : "Afegir client"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={generateShortcutFormat}
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+                >
+                  <Copy className="w-4 h-4 mr-1" />
+                  {language === "es" ? "Copiar para Atajo" : "Copiar per a Atajo"}
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -430,9 +470,16 @@ export function LeadMessageGenerator() {
                 : "4. Afegeix més clients amb el botó 'Afegir client' si vols enviar a diversos"}
             </li>
             <li>
+              <strong>
+                {language === "es"
+                  ? "5. ENVÍO AUTOMÁTICO: Haz clic en 'Copiar para Atajo' y pega en tu atajo 'EnviarWhatsappLBJ' de Apple"
+                  : "5. ENVIAMENT AUTOMÀTIC: Fes clic a 'Copiar per a Atajo' i enganxa al teu atall 'EnviarWhatsappLBJ' d'Apple"}
+              </strong>
+            </li>
+            <li>
               {language === "es"
-                ? "5. Haz clic en 'Enviar por WhatsApp' en cada cliente para abrir la conversación"
-                : "5. Fes clic a 'Enviar per WhatsApp' a cada client per obrir la conversa"}
+                ? "6. O haz clic en 'Enviar por WhatsApp' en cada cliente para abrir la conversación manualmente"
+                : "6. O fes clic a 'Enviar per WhatsApp' a cada client per obrir la conversa manualment"}
             </li>
           </ul>
         </CardContent>
