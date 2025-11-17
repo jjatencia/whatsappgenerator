@@ -329,7 +329,8 @@ export function LeadMessageGenerator() {
                   variant="default"
                   size="sm"
                   onClick={runAppleShortcut}
-                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+                  className="w-full sm:w-auto"
+                  style={{ backgroundColor: '#2563eb', color: 'white' }}
                 >
                   <Send className="w-4 h-4 mr-1" />
                   {language === "es" ? "Enviar con Atajo" : "Enviar amb Atajo"}
