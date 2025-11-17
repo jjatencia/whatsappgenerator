@@ -219,8 +219,8 @@ export function LeadMessageGenerator() {
     window.open(link, "_blank");
   };
 
-  // Generar formato para atajo de Apple
-  const generateShortcutFormat = () => {
+  // Ejecutar atajo de Apple directamente
+  const runAppleShortcut = () => {
     const validLeads = leads.filter(lead => lead.phoneNumber.trim() && lead.name.trim());
 
     if (validLeads.length === 0) {
@@ -231,20 +231,25 @@ export function LeadMessageGenerator() {
     }
 
     const formatted = validLeads.map(lead => {
-      const message = lead.customMessage.replace(/\[Nombre\]/g, lead.name);
+      let message = lead.customMessage.replace(/\[Nombre\]/g, lead.name);
+      message = message.replace(/\[NombreAgente\]/g, agentName || "Juanjo");
       const cleanPhone = lead.phoneNumber.replace(/\D/g, "");
       return `${cleanPhone} ||| ${message}`;
     }).join('\n\n');
 
-    navigator.clipboard.writeText(formatted).then(() => {
+    // Crear URL para ejecutar el atajo de Apple con el texto como parámetro
+    const encodedText = encodeURIComponent(formatted);
+    const shortcutURL = `shortcuts://run-shortcut?name=EnviarWhatsappLBJ&input=text&text=${encodedText}`;
+
+    // Intentar abrir el atajo
+    window.location.href = shortcutURL;
+
+    // Mostrar mensaje de confirmación
+    setTimeout(() => {
       alert(language === "es"
-        ? `✅ Copiado! ${validLeads.length} mensaje(s) listo(s) para el atajo EnviarWhatsappLBJ`
-        : `✅ Copiat! ${validLeads.length} missatge(s) preparat(s) per a l'atajo EnviarWhatsappLBJ`);
-    }).catch(() => {
-      alert(language === "es"
-        ? "Error al copiar. Intenta de nuevo."
-        : "Error en copiar. Intenta de nou.");
-    });
+        ? `✅ Ejecutando atajo con ${validLeads.length} mensaje(s)...`
+        : `✅ Executant atajo amb ${validLeads.length} missatge(s)...`);
+    }, 500);
   };
 
   return (
@@ -323,11 +328,11 @@ export function LeadMessageGenerator() {
                   type="button"
                   variant="default"
                   size="sm"
-                  onClick={generateShortcutFormat}
+                  onClick={runAppleShortcut}
                   className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
                 >
-                  <Copy className="w-4 h-4 mr-1" />
-                  {language === "es" ? "Copiar para Atajo" : "Copiar per a Atajo"}
+                  <Send className="w-4 h-4 mr-1" />
+                  {language === "es" ? "Enviar con Atajo" : "Enviar amb Atajo"}
                 </Button>
               </div>
             </div>
@@ -472,14 +477,14 @@ export function LeadMessageGenerator() {
             <li>
               <strong>
                 {language === "es"
-                  ? "5. ENVÍO AUTOMÁTICO: Haz clic en 'Copiar para Atajo' y pega en tu atajo 'EnviarWhatsappLBJ' de Apple"
-                  : "5. ENVIAMENT AUTOMÀTIC: Fes clic a 'Copiar per a Atajo' i enganxa al teu atall 'EnviarWhatsappLBJ' d'Apple"}
+                  ? "5. ENVÍO AUTOMÁTICO: Haz clic en 'Enviar con Atajo' para ejecutar automáticamente el atajo 'EnviarWhatsappLBJ'"
+                  : "5. ENVIAMENT AUTOMÀTIC: Fes clic a 'Enviar amb Atajo' per executar automàticament l'atall 'EnviarWhatsappLBJ'"}
               </strong>
             </li>
             <li>
               {language === "es"
-                ? "6. O haz clic en 'Enviar por WhatsApp' en cada cliente para abrir la conversación manualmente"
-                : "6. O fes clic a 'Enviar per WhatsApp' a cada client per obrir la conversa manualment"}
+                ? "6. O haz clic en 'Enviar por WhatsApp' en cada cliente individualmente para abrir la conversación manualmente"
+                : "6. O fes clic a 'Enviar per WhatsApp' a cada client individualment per obrir la conversa manualment"}
             </li>
           </ul>
         </CardContent>
