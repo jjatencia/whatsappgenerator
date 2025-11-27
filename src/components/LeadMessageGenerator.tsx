@@ -657,7 +657,7 @@ export function LeadMessageGenerator() {
 
       {/* Diálogo de Gestión de Plantillas */}
       <Dialog open={isPresetsDialogOpen} onOpenChange={setIsPresetsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {language === "es" ? "Gestionar Plantillas de Mensajes" : "Gestionar Plantilles de Missatges"}
@@ -669,7 +669,7 @@ export function LeadMessageGenerator() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-y-auto flex-1 pr-2">
             {/* Formulario para crear/editar preset */}
             <Card>
               <CardHeader>
