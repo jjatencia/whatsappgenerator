@@ -1,15 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
-import { MessageSquare, Plus, X, Send, Copy } from "lucide-react";
+import { MessageSquare, Plus, X, Send, Settings, Edit, Trash2 } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 
 type Language = "es" | "ca";
-type MessageTemplate = "short" | "long" | "trial";
+type MessageTemplate = "short" | "long" | "trial" | string;
 
 interface Lead {
   id: string;
@@ -17,6 +25,19 @@ interface Lead {
   phoneNumber: string;
   customMessage: string;
   selectedTemplate: MessageTemplate;
+}
+
+interface CustomPreset {
+  id: string;
+  name: string;
+  label: {
+    es: string;
+    ca: string;
+  };
+  message: {
+    es: string;
+    ca: string;
+  };
 }
 
 const MESSAGE_TEMPLATES = {
@@ -125,13 +146,118 @@ export function LeadMessageGenerator() {
     },
   ]);
 
+  // Estados para Custom Presets
+  const [customPresets, setCustomPresets] = useState<CustomPreset[]>([]);
+  const [isPresetsDialogOpen, setIsPresetsDialogOpen] = useState(false);
+  const [editingPreset, setEditingPreset] = useState<CustomPreset | null>(null);
+  const [newPresetName, setNewPresetName] = useState("");
+  const [newPresetLabelEs, setNewPresetLabelEs] = useState("");
+  const [newPresetLabelCa, setNewPresetLabelCa] = useState("");
+  const [newPresetMessageEs, setNewPresetMessageEs] = useState("");
+  const [newPresetMessageCa, setNewPresetMessageCa] = useState("");
+
+  // Cargar custom presets desde localStorage al iniciar
+  useEffect(() => {
+    const stored = localStorage.getItem("customPresets");
+    if (stored) {
+      try {
+        setCustomPresets(JSON.parse(stored));
+      } catch (e) {
+        console.error("Error loading custom presets:", e);
+      }
+    }
+  }, []);
+
+  // Guardar custom presets en localStorage cuando cambien
+  useEffect(() => {
+    if (customPresets.length > 0 || localStorage.getItem("customPresets")) {
+      localStorage.setItem("customPresets", JSON.stringify(customPresets));
+    }
+  }, [customPresets]);
+
+  // Funciones para gestionar custom presets
+  const openNewPresetDialog = () => {
+    setEditingPreset(null);
+    setNewPresetName("");
+    setNewPresetLabelEs("");
+    setNewPresetLabelCa("");
+    setNewPresetMessageEs("");
+    setNewPresetMessageCa("");
+    setIsPresetsDialogOpen(true);
+  };
+
+  const openEditPresetDialog = (preset: CustomPreset) => {
+    setEditingPreset(preset);
+    setNewPresetName(preset.name);
+    setNewPresetLabelEs(preset.label.es);
+    setNewPresetLabelCa(preset.label.ca);
+    setNewPresetMessageEs(preset.message.es);
+    setNewPresetMessageCa(preset.message.ca);
+    setIsPresetsDialogOpen(true);
+  };
+
+  const saveCustomPreset = () => {
+    if (!newPresetName.trim() || !newPresetLabelEs.trim() || !newPresetMessageEs.trim()) {
+      alert(language === "es"
+        ? "Por favor completa al menos el nombre, etiqueta en español y mensaje en español"
+        : "Si us plau completa almenys el nom, etiqueta en espanyol i missatge en espanyol");
+      return;
+    }
+
+    const preset: CustomPreset = {
+      id: editingPreset?.id || `custom-${Date.now()}`,
+      name: newPresetName.trim(),
+      label: {
+        es: newPresetLabelEs.trim(),
+        ca: newPresetLabelCa.trim() || newPresetLabelEs.trim(),
+      },
+      message: {
+        es: newPresetMessageEs.trim(),
+        ca: newPresetMessageCa.trim() || newPresetMessageEs.trim(),
+      },
+    };
+
+    if (editingPreset) {
+      // Editar preset existente
+      setCustomPresets(customPresets.map(p => p.id === editingPreset.id ? preset : p));
+    } else {
+      // Crear nuevo preset
+      setCustomPresets([...customPresets, preset]);
+    }
+
+    setIsPresetsDialogOpen(false);
+  };
+
+  const deleteCustomPreset = (id: string) => {
+    if (confirm(language === "es"
+      ? "¿Estás seguro de eliminar esta plantilla?"
+      : "Estàs segur d'eliminar aquesta plantilla?")) {
+      setCustomPresets(customPresets.filter(p => p.id !== id));
+    }
+  };
+
+  // Función para obtener el mensaje de una plantilla (hardcoded o custom)
+  const getTemplateMessage = (template: MessageTemplate, name: string, lang?: Language): string => {
+    const currentLang = lang || language;
+    // Primero buscar en custom presets
+    const customPreset = customPresets.find(p => p.id === template);
+    if (customPreset) {
+      return customPreset.message[currentLang].replace(/\[Nombre\]/g, name);
+    }
+    // Si no, usar hardcoded templates
+    if (template === "short" || template === "long" || template === "trial") {
+      return MESSAGE_TEMPLATES[currentLang][template](name);
+    }
+    return MESSAGE_TEMPLATES[currentLang].short(name);
+  };
+
   // Actualizar el mensaje cuando cambia el idioma
   const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage);
     // Actualizar todos los mensajes al nuevo idioma
     setLeads(leads.map(lead => ({
       ...lead,
-      customMessage: MESSAGE_TEMPLATES[newLanguage][lead.selectedTemplate](lead.name || "[Nombre]"),
+      customMessage: getTemplateMessage(lead.selectedTemplate, lead.name || "[Nombre]", newLanguage),
     })));
   };
 
@@ -143,7 +269,7 @@ export function LeadMessageGenerator() {
         return {
           ...lead,
           name,
-          customMessage: MESSAGE_TEMPLATES[language][lead.selectedTemplate](messageName),
+          customMessage: getTemplateMessage(lead.selectedTemplate, messageName),
         };
       }
       return lead;
@@ -158,7 +284,7 @@ export function LeadMessageGenerator() {
         return {
           ...lead,
           selectedTemplate: template,
-          customMessage: MESSAGE_TEMPLATES[language][template](messageName),
+          customMessage: getTemplateMessage(template, messageName),
         };
       }
       return lead;
@@ -307,6 +433,32 @@ export function LeadMessageGenerator() {
             </p>
           </div>
 
+          {/* Gestión de Plantillas */}
+          <div className="space-y-2 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-semibold text-blue-900">
+                  {language === "es" ? "Plantillas de Mensajes" : "Plantilles de Missatges"}
+                </Label>
+                <p className="text-xs text-blue-700 mt-1">
+                  {language === "es"
+                    ? "Crea tus propias plantillas para diferentes situaciones"
+                    : "Crea les teves pròpies plantilles per a diferents situacions"}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={openNewPresetDialog}
+                className="bg-white"
+              >
+                <Settings className="w-4 h-4 mr-1" />
+                {language === "es" ? "Gestionar" : "Gestionar"}
+              </Button>
+            </div>
+          </div>
+
           {/* Leads */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -408,6 +560,18 @@ export function LeadMessageGenerator() {
                         <SelectItem value="trial">
                           {TEMPLATE_LABELS[language].trial}
                         </SelectItem>
+                        {customPresets.length > 0 && (
+                          <>
+                            <SelectItem value="separator" disabled>
+                              ──────────────
+                            </SelectItem>
+                            {customPresets.map((preset) => (
+                              <SelectItem key={preset.id} value={preset.id}>
+                                {preset.label[language]}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -490,6 +654,205 @@ export function LeadMessageGenerator() {
           </ul>
         </CardContent>
       </Card>
+
+      {/* Diálogo de Gestión de Plantillas */}
+      <Dialog open={isPresetsDialogOpen} onOpenChange={setIsPresetsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {language === "es" ? "Gestionar Plantillas de Mensajes" : "Gestionar Plantilles de Missatges"}
+            </DialogTitle>
+            <DialogDescription>
+              {language === "es"
+                ? "Crea, edita o elimina tus plantillas personalizadas para diferentes situaciones"
+                : "Crea, edita o elimina les teves plantilles personalitzades per a diferents situacions"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 overflow-y-auto flex-1 pr-2">
+            {/* Formulario para crear/editar preset */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  {editingPreset
+                    ? (language === "es" ? "Editar Plantilla" : "Editar Plantilla")
+                    : (language === "es" ? "Nueva Plantilla" : "Nova Plantilla")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="preset-name">
+                    {language === "es" ? "Nombre Interno (Identificador)" : "Nom Intern (Identificador)"}
+                  </Label>
+                  <Input
+                    id="preset-name"
+                    placeholder={language === "es" ? "Ej: seguimiento-post-llamada" : "Ex: seguiment-post-trucada"}
+                    value={newPresetName}
+                    onChange={(e) => setNewPresetName(e.target.value)}
+                  />
+                  <p className="text-xs text-slate-500">
+                    {language === "es"
+                      ? "Solo para identificación interna, no se muestra a los clientes"
+                      : "Només per identificació interna, no es mostra als clients"}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="preset-label-es">
+                      {language === "es" ? "Etiqueta en Español *" : "Etiqueta en Espanyol *"}
+                    </Label>
+                    <Input
+                      id="preset-label-es"
+                      placeholder="Ej: Seguimiento Post-Llamada"
+                      value={newPresetLabelEs}
+                      onChange={(e) => setNewPresetLabelEs(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="preset-label-ca">
+                      {language === "es" ? "Etiqueta en Catalán" : "Etiqueta en Català"}
+                    </Label>
+                    <Input
+                      id="preset-label-ca"
+                      placeholder="Ex: Seguiment Post-Trucada"
+                      value={newPresetLabelCa}
+                      onChange={(e) => setNewPresetLabelCa(e.target.value)}
+                    />
+                    <p className="text-xs text-slate-500">
+                      {language === "es"
+                        ? "Opcional: si no se completa, se usará la etiqueta en español"
+                        : "Opcional: si no es completa, s'utilitzarà l'etiqueta en espanyol"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="preset-message-es">
+                      {language === "es" ? "Mensaje en Español *" : "Missatge en Espanyol *"}
+                    </Label>
+                    <Textarea
+                      id="preset-message-es"
+                      placeholder={language === "es"
+                        ? "Hola [Nombre] 👋\n\nSoy [NombreAgente]..."
+                        : "Hola [Nombre] 👋\n\nSóc [NombreAgente]..."}
+                      value={newPresetMessageEs}
+                      onChange={(e) => setNewPresetMessageEs(e.target.value)}
+                      className="min-h-[200px] font-mono text-xs"
+                    />
+                    <p className="text-xs text-slate-500">
+                      {language === "es"
+                        ? "Usa [Nombre] para el cliente y [NombreAgente] para tu nombre"
+                        : "Utilitza [Nombre] pel client i [NombreAgente] pel teu nom"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="preset-message-ca">
+                      {language === "es" ? "Mensaje en Catalán" : "Missatge en Català"}
+                    </Label>
+                    <Textarea
+                      id="preset-message-ca"
+                      placeholder="Hola [Nombre] 👋\n\nSóc [NombreAgente]..."
+                      value={newPresetMessageCa}
+                      onChange={(e) => setNewPresetMessageCa(e.target.value)}
+                      className="min-h-[200px] font-mono text-xs"
+                    />
+                    <p className="text-xs text-slate-500">
+                      {language === "es"
+                        ? "Opcional: si no se completa, se usará el mensaje en español"
+                        : "Opcional: si no es completa, s'utilitzarà el missatge en espanyol"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={saveCustomPreset}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    {editingPreset
+                      ? (language === "es" ? "Actualizar Plantilla" : "Actualitzar Plantilla")
+                      : (language === "es" ? "Crear Plantilla" : "Crear Plantilla")}
+                  </Button>
+                  {editingPreset && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={openNewPresetDialog}
+                    >
+                      {language === "es" ? "Cancelar Edición" : "Cancel·lar Edició"}
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Lista de plantillas existentes */}
+            {customPresets.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {language === "es" ? "Plantillas Personalizadas" : "Plantilles Personalitzades"}
+                  </CardTitle>
+                  <CardDescription>
+                    {language === "es"
+                      ? `Tienes ${customPresets.length} plantilla(s) personalizada(s)`
+                      : `Tens ${customPresets.length} plantilla/es personalitzada/es`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {customPresets.map((preset) => (
+                      <div
+                        key={preset.id}
+                        className="p-4 border-2 border-slate-200 rounded-lg bg-slate-50 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-semibold text-slate-900">
+                              {preset.label[language]}
+                            </h4>
+                            <p className="text-xs text-slate-500">
+                              {language === "es" ? "ID: " : "ID: "}{preset.name}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditPresetDialog(preset)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteCustomPreset(preset.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="text-xs text-slate-700 font-mono bg-white p-2 rounded border border-slate-200 whitespace-pre-wrap">
+                          {preset.message[language].substring(0, 150)}
+                          {preset.message[language].length > 150 && "..."}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
